@@ -1,5 +1,6 @@
 
-import { prisma } from '../db/prisma.js'
+import db from "../db/connection.js";
+import  { ObjectId } from "mongodb";
 
 export const requireAuth = async (req, res, next) => {
   try {
@@ -10,10 +11,10 @@ export const requireAuth = async (req, res, next) => {
       return
     }
 
-    const session = await prisma.session.findUnique({
-      where: { token },
-      include: { user: true }
-    })
+    let userSessionCollection = await db.collection("usersession");
+    let query = { token: token };
+    // Find user
+    const session = await userSessionCollection.findOne(query);
 
     if (!session) {
       res.clearCookie('session')
@@ -22,20 +23,26 @@ export const requireAuth = async (req, res, next) => {
     }
 
     if (session.expiresAt < new Date()) {
-      await prisma.session.delete({ where: { id: session.id } })
+      await collection.deleteOne(query);
       res.clearCookie('session')
       res.status(401).json({ error: 'Session expired' })
       return
     }
 
+    // get the user object 
+    let userCollection = await db.collection("user");
+    const userQuery = { _id: new ObjectId(session.userId ) };
+    const user = await userCollection.findOne(userQuery);
+
     req.user = {
-      id: session.user.id,
-      email: session.user.email,
-      name: session.user.name
+      id: user._id,
+      email: user.email,
+      username: user.username,
+      role: user.role,
     }
 
     req.session = {
-      id: session.id,
+      id: session._id,
       token: session.token
     }
 
