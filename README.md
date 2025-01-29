@@ -91,7 +91,7 @@ npm start
 ```
 
 
-The production build will be available at the port specified in your environment variables (default: 3000).
+The production build will be available at the port specified in your environment variables (default: 5050).
 
 ### Deployment Options
 
